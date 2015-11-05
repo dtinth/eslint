@@ -9,27 +9,44 @@ var website = "eslint.org";
 
 On the first line, the JavaScript engine will automatically insert a semicolon, so this is not considered a syntax error. The JavaScript engine still knows how to interpret the line and knows that the line end indicates the end of the statement.
 
-In the debate over ASI, there are generally two schools of thought. The first is that we should treat ASI as if it didn't exist and always include semicolons manually. The rationale is that it's easier to always include semicolons than to try to remember when they are or are not required, and thus decreases the possibility of introducing an error. For example, consider this code:
+In the debate over ASI, there are generally two schools of thought. The first is that we should treat ASI as if it didn't exist and always include semicolons manually. The rationale is that it's easier to always include semicolons than to try to remember when they are or are not required, and thus decreases the possibility of introducing an error.
 
-```
+As much as one would want to pretend that ASI didn't exist, the truth is that it does, and it will insert a semicolon in some case that they might not expect. For example, consider this code:
+
+```js
 return
-{
-    name: "ESLint"
-}
-```
-
-This may look like a `return` statement that returns an object literal, however, the JavaScript engine will interpret this code as:
-
-```
-return;
 {
     name: "ESLint"
 };
 ```
 
-Effectively, an object literal is created in an unreachable part of the code. That's because a semicolon will be inserted after the `return` statement.
+This may look like a `return` statement that returns an object literal, however, the JavaScript engine will interpret this code as:
 
-On the other side of the argument are those who say ASI isn't magic, it follows a set of rules as to when semicolons are inserted and it's fairly easy to remember them. In short, as once described by Isaac Schlueter, a `\n` character always ends a statement (just like a semicolon) unless one of the following is true:
+```js
+return;
+{
+    name: "ESLint";
+}
+```
+
+Effectively, a semicolon is inserted after the `return` statement, causing the code below it (a labeled literal inside a block) to be unreachable. This rule and the [no-unreachable](no-unreachable.md) rule will protect your code from such cases.
+
+On the other side of the argument are those who says that since semicolons are inserted automatically, they are optional and do not need to be inserted manually. But as much as one would trust that ASI will insert a semicolon for them, there are few cases where a semicolon will not be inserted. For example, consider this code:
+
+```js
+var globalCounter = { }
+
+(function () {
+    var n = 0
+    globalCounter.increment = function () {
+        return ++n
+    }
+})()
+```
+
+In this example, a semicolon will not be inserted after the first line, causing a run-time error (bacause an empty object is called as if it's a function). The [no-unexpected-multiline](no-unexpected-multiline.md) rule can protect your code from such cases.
+
+ASI can make your code behave in an unexpected way, whether you use semicolons or not. Therefore, it is best to know when ASI takes place and when it does not, and have ESLint protect your code from potentially unexpected cases. ASI isn't magic; it follows a set of rules as to when semicolons are inserted and it's fairly easy to remember them. In short, as once described by Isaac Schlueter, a `\n` character always ends a statement (just like a semicolon) unless one of the following is true:
 
 1. The statement has an unclosed paren, array literal, or object literal or ends in some other way that is not a valid way to end a statement. (For instance, ending with `.` or `,`.)
 1. The line is `--` or `++` (in which case it will decrement/increment the next token.)
